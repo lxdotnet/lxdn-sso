@@ -1,0 +1,54 @@
+﻿namespace Lxdn.Sso.Views.Authentication
+{
+@model Lxdn.Sso.ViewModels.Authentication.AuthenticationModel
+
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.css" rel="stylesheet" />
+    <link href="~/styles/signin.css" rel="stylesheet" />
+    <script src="~/scripts/signin.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="signin-dlg absolute-center responsive drop-shadow">
+                <div class="col-sm-12 col-md-10 col-md-offset-1">
+                    <div id="logo-container"></div>
+                    <form action="" method="post" id="loginForm">
+                        <div class="form-group input-group">
+                            <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
+                            <input class="form-control" type="text" name='username' placeholder="username" />
+                        </div>
+                        <div class="form-group input-group">
+                            <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
+                            <input class="form-control" type="password" name='password' placeholder="password" />
+                        </div>
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" name="rememberMe" value="True">Remember me
+                            </label>
+                        </div>
+                        @foreach (var error in ViewData.ModelState.SelectMany(x => x.Value.Errors))
+                        {
+                            <div class="alert alert-danger alert-dismissible" role="alert">
+                                <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                                <span>&nbsp;@error.ErrorMessage</span>
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        }
+                        <div class="form-group">
+                            <button type="submit" name="submit" class="btn btn-def btn-block">Login</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+}

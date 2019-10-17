@@ -1,0 +1,47 @@
+﻿
+body {
+    background-image: url('https://big-background-image');
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-attachment: fixed;
+    background-size: cover;
+}
+
+.signin-dlg {
+    background-color: snow;
+    box-shadow: 6px 16px 30px 1px #4a4a4a;
+}
+
+.signin-dlg-contents {
+    transform: translateY(30%);
+}
+
+.absolute-center {
+    margin: auto;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+
+.absolute-center.responsive {
+    width: 50%;
+    height: 50%;
+    min-width: 200px;
+    max-width: 400px;
+    padding: 40px;
+}
+
+#logo-container {
+    /* margin: auto; */
+    margin-bottom: 33px;
+    width: 200px;
+    height: 73px;
+    background-image: url('https://company-logo');
+    background-size: cover;
+    margin-left: 10px;
+    margin-top: 20px;
+}
+
+/* https://codepen.io/OldManJava/pen/bwupj */
