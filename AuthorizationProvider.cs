@@ -9,22 +9,23 @@ namespace Lxdn.Sso
 {
     public class AuthorizationProvider : OpenIdConnectServerProvider
     {
-        public AuthorizationProvider(IdentityManager identityManager, UserManager users)
-        {
-            OnValidateTokenRequest = context => {
+        public AuthorizationProvider(IdentityManager identities, UserManager users, 
+            GuardedExecution guard)
+        { 
+            OnValidateTokenRequest = context => guard.Action(() => {
                 // validate client_id/secret
                 context.Validate();
                 return Task.CompletedTask;
-            };
+            });
 
             OnHandleTokenRequest = async context => {
-                if (! await users.Exists(context.Request.Username, context.Request.Password))
+                if (! await users.Validate(context.Request.Username, context.Request.Password))
                 {
                     context.Reject();
                 }
                 else
                 {
-                    var identity = await identityManager.GetIdentity(context.Request.Username);
+                    var identity = await identities.Create(context.Request.Username);
                     var ticket = new AuthenticationTicket(new ClaimsPrincipal(identity), new AuthenticationProperties(), context.Scheme.Name);
                     //ticket.SetScopes(OpenIdConnectConstants.Scopes.OpenId);
                     context.Validate(ticket);
@@ -49,6 +50,13 @@ namespace Lxdn.Sso
                         authentication.Principal, authentication.Properties);
                 }
 
+                context.HandleResponse();
+            };
+
+            OnHandleLogoutRequest = async context => {
+                await context.HttpContext.SignOutAsync();
+                var redirect = context.HttpContext.Request.Query["redirect_uri"];
+                context.HttpContext.Response.Redirect(redirect);
                 context.HandleResponse();
             };
         }

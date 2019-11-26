@@ -8,11 +8,11 @@ namespace Lxdn.Sso.Managers
 {
     public class IdentityManager
     {
-        public Task<ClaimsIdentity> GetIdentity(string user)
+        public Task<ClaimsIdentity> Create(string user)
         {
             return Task.FromResult(new ClaimsIdentity()
                 .AddClaim(OpenIdConnectConstants.Claims.Subject, user)
-                .AddClaim("test1", "test2"));
+                .AddClaim("test1", "test2", OpenIdConnectConstants.Destinations.AccessToken)); // when the destination is not specified, the claim is excluded from the token being issued
         }
     }
 }

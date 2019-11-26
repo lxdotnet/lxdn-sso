@@ -12,9 +12,38 @@ using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 
 using Lxdn.Sso.Extensions;
+using NLog;
+using Microsoft.AspNetCore.Http;
+using System.Threading.Tasks;
+using Microsoft.Extensions.FileProviders;
 
 namespace Lxdn.Sso
 {
+    public class SpaRewriter
+    {
+        private readonly RequestDelegate next;
+        private readonly IHostingEnvironment hosting;
+
+        public SpaRewriter(RequestDelegate next, IHostingEnvironment hosting)
+        {
+            this.next = next;
+            this.hosting = hosting;
+        }
+
+        public async Task InvokeAsync(HttpContext http)
+        {
+            if (http.Request.Path == "/spa")
+            {
+                var index = hosting.WebRootFileProvider.GetFileInfo("/index.html");
+                http.Response.ContentType = "text/html";
+                await http.Response.SendFileAsync(index);
+                return;
+            }
+
+            await next(http);
+        }
+    }
+
     public class Startup
     {
         private readonly IConfiguration configuration;
@@ -38,15 +67,20 @@ namespace Lxdn.Sso
 
             services
                 .AddCors()
+                .AddHttpContextAccessor()
+                .AddSingleton(LogManager.GetLogger("sso"))                
+                .AddScoped(container => container.GetService<IHttpContextAccessor>().HttpContext)                
                 .AddAuthentication(IISDefaults.AuthenticationScheme);
 
             services
                 .AddAuthentication(auth => {
                     auth.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-                })                
-                .AddCookie(JwtBearerDefaults.AuthenticationScheme, options => {
+                    //auth.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddCookie(JwtBearerDefaults.AuthenticationScheme, options =>
+                {
                     options.LoginPath = "/user/signin";
-                    options.LogoutPath = "/user/signout";
+                    //options.LogoutPath = "/user/signout";
                 })
                 .AddOpenIdConnectServer(oauth => {
                     oauth.AllowInsecureHttp = true;
@@ -56,6 +90,7 @@ namespace Lxdn.Sso
                     oauth.AccessTokenHandler = new JwtSecurityTokenHandler();
                     oauth.SigningCredentials.Add(asymmetric);
                     oauth.AccessTokenLifetime = TimeSpan.FromHours(1);
+                    oauth.LogoutEndpointPath = "/user/signout";
                 });
         }
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -66,11 +101,12 @@ namespace Lxdn.Sso
             else
                 app.UseHsts();
             app
-            //.UseHttpsRedirection();            
+            //.UseHttpsRedirection();
             .UseAuthentication()
             .UseCors(Cors.AllowEverything)
             .UseDefaultFiles()
             .UseStaticFiles()
+            .UseMiddleware<SpaRewriter>()
             .UseMvc();
         }
     }
