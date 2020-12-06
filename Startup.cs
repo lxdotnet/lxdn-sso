@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.IISIntegration;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Logging;
@@ -22,19 +23,19 @@ namespace Lxdn.Sso
     public class SpaRewriter
     {
         private readonly RequestDelegate next;
-        private readonly IHostingEnvironment hosting;
+        private readonly IWebHostEnvironment host;
 
-        public SpaRewriter(RequestDelegate next, IHostingEnvironment hosting)
+        public SpaRewriter(RequestDelegate next, IWebHostEnvironment host)
         {
             this.next = next;
-            this.hosting = hosting;
+            this.host = host;
         }
 
         public async Task InvokeAsync(HttpContext http)
         {
             if (http.Request.Path == "/spa")
             {
-                var index = hosting.WebRootFileProvider.GetFileInfo("/index.html");
+                var index = host.WebRootFileProvider.GetFileInfo("/index.html");
                 http.Response.ContentType = "text/html";
                 await http.Response.SendFileAsync(index);
                 return;
@@ -47,9 +48,9 @@ namespace Lxdn.Sso
     public class Startup
     {
         private readonly IConfiguration configuration;
-        private readonly IHostingEnvironment environment;
+        private readonly IWebHostEnvironment environment;
 
-        public Startup(IConfiguration configuration, IHostingEnvironment environment)
+        public Startup(IConfiguration configuration, IWebHostEnvironment environment)
         {
             this.configuration = configuration;
             this.environment = environment;
@@ -57,7 +58,7 @@ namespace Lxdn.Sso
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddMvc();//.SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             var jwk = configuration.GetSection("AppSettings:jwk").Get<JsonWebKey>(); // https://mkjwk.org/ https://tools.ietf.org/html/rfc7517#section-4
             var asymmetric = new SigningCredentials(jwk, jwk.Alg);
 
@@ -69,8 +70,10 @@ namespace Lxdn.Sso
                 .AddCors()
                 .AddHttpContextAccessor()
                 .AddSingleton(LogManager.GetLogger("sso"))                
-                .AddScoped(container => container.GetService<IHttpContextAccessor>().HttpContext)                
+                .AddScoped(container => container.GetService<IHttpContextAccessor>().HttpContext)
                 .AddAuthentication(IISDefaults.AuthenticationScheme);
+
+            services.AddControllers();
 
             services
                 .AddAuthentication(auth => {
@@ -89,12 +92,12 @@ namespace Lxdn.Sso
                     oauth.ProviderType = typeof(AuthorizationProvider);
                     oauth.AccessTokenHandler = new JwtSecurityTokenHandler();
                     oauth.SigningCredentials.Add(asymmetric);
-                    oauth.AccessTokenLifetime = TimeSpan.FromHours(1);
+                    oauth.AccessTokenLifetime = TimeSpan.FromMinutes(15);
                     oauth.LogoutEndpointPath = "/user/signout";
                 });
         }
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
                 app.UseDeveloperExceptionPage();
@@ -102,12 +105,13 @@ namespace Lxdn.Sso
                 app.UseHsts();
             app
             //.UseHttpsRedirection();
+            .UseRouting()
             .UseAuthentication()
             .UseCors(Cors.AllowEverything)
             .UseDefaultFiles()
             .UseStaticFiles()
-            .UseMiddleware<SpaRewriter>()
-            .UseMvc();
+            .UseMiddleware<SpaRewriter>();
+            //.UseEndpoints(endpoints => endpoints.MapControllers()); // https://stackoverflow.com/questions/57684093/using-usemvc-to-configure-mvc-is-not-supported-while-using-endpoint-routing
         }
     }
 }
