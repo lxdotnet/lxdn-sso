@@ -1,0 +1,26 @@
+download page: https://dotnet.microsoft.com/download/visual-studio-sdks?utm_source=getdotnetsdk&utm_medium=referral
+
+install latest visual studio 2019
+observe net5.0 in the list of available targets, change to .net 5
+remove (in dependencies)
+    <PackageReference Include="Microsoft.AspNetCore.App"/>
+    <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.2.0" PrivateAssets="All" />
+as stated here: https://docs.microsoft.com/en-us/aspnet/core/migration/22-to-30?view=aspnetcore-5.0&tabs=visual-studio
+
+IWebHostEnvironment
+no .IsDevelopment() => add using Microsoft.Extensions.Hosting;
+(https://stackoverflow.com/questions/58070476/asp-net-core-2-2-3-0-upgrade-env-isdevelopment-not-found)
+
+update package Microsoft.VisualStudio.Web.CodeGeneration.Design to 5.x
+install Microsoft.AspNetCore.Authentication.JwtBearer 5.x
+
+There is a new tab "Git changes"!
+no AllowCredentials in Cors middleware
+.UseRouting() in application (before .UseAuthentication)
+
+
+
+important: sequence of UseRouting UseAuthentication and UseEndpoints in Startup
+https://stackoverflow.com/questions/57846127/what-are-the-differences-between-app-userouting-and-app-useendpoints
+cookie.samesite, cookie.securepolicy for AddCookie (for Chrome)
+RequireAuthenticatedSignIn = false in AddAuthentication
