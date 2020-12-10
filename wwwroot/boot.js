@@ -47,11 +47,11 @@
             if (!signin(window)) {
                 challenge(window);
             } else { // bootstrap:
-                var ng = { $injector: angular.injector(['ng']) };
-                $q = ng.$injector.get('$q');
+                var $injector = angular.injector(['ng']);
+                var $q = $injector.get('$q');
                 $q.when((function () {
                     if (onBeforeBootstrap)
-                        return onBeforeBootstrap(ng);
+                        return onBeforeBootstrap({ $injector: $injector });
                 })(), function () {
                     angular.element(document).ready(function () {
                         angular.bootstrap(document.getElementsByTagName('html')[0], ['app'])
