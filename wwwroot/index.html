@@ -9,7 +9,7 @@
 </head>
 <body onload="oauth.login(location.origin, 'testClient')" ng-controller="sso">
     <div id="header" class="container">
-        <a class="logout" href="#" title="logout" ng-click="logout()"></a>
+        <a class="logout" href="#" title="logout" ng-click="oauth.logout()"></a>
     </div>
     <div id="claims" class="container">
         <ul>
@@ -18,7 +18,8 @@
                 <span>{{claim.value}}</span>
             </li>
         </ul>
-    </div>    
+    </div>
+    <button id="refresh" ng-click="oauth.refreshToken()" title="force refresh token">Refresh</button>
     <script>
         (function (angular) {
             angular
@@ -26,10 +27,8 @@
                 .run(['$document', function ($document) {
                     $document.find('body').addClass('app-started');
                 }]).controller('sso', ['$scope', 'user', function ($scope, user) {
+                    $scope.oauth = oauth;
                     $scope.user = user.current();
-                    $scope.logout = function () {
-                        oauth.logout();
-                    }
                 }])
         })(angular);
     </script>
