@@ -1,1 +1,37 @@
-Lxdn.Sso
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.2/angular.min.js"></script>
+    <script src="boot.js"></script>
+    <link rel="stylesheet" href="/styles/app.css" />
+</head>
+<body onload="oauth.login(location.origin, 'testClient')" ng-controller="sso">
+    <div id="header" class="container">
+        <a class="logout" href="#" title="logout" ng-click="logout()"></a>
+    </div>
+    <div id="claims" class="container">
+        <ul>
+            <li ng-repeat="claim in user.claims">
+                <span>{{claim.name}}</span>
+                <span>{{claim.value}}</span>
+            </li>
+        </ul>
+    </div>    
+    <script>
+        (function (angular) {
+            angular
+                .module('app', ['auth']) // 'app' is currently hardcoded in boot.js
+                .run(['$document', function ($document) {
+                    $document.find('body').addClass('app-started');
+                }]).controller('sso', ['$scope', 'user', function ($scope, user) {
+                    $scope.user = user.current();
+                    $scope.logout = function () {
+                        oauth.logout();
+                    }
+                }])
+        })(angular);
+    </script>
+</body>
+</html>

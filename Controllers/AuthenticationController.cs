@@ -32,7 +32,7 @@ namespace Lxdn.Sso.Controllers
         [HttpPost("user/signin")]
         public async Task<ActionResult> SignIn(AuthenticationModel user)
         {
-            if (! await users.Validate(user.Username, user.Password))
+            if (!await users.Validate(user.Username, user.Password))
             {
                 ModelState.AddModelError("Error", "Authentication failed");
                 return View("SignIn");

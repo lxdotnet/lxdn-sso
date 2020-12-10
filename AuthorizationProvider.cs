@@ -13,7 +13,6 @@ namespace Lxdn.Sso
             GuardedExecution guard)
         { 
             OnValidateTokenRequest = context => guard.Action(() => {
-                // validate client_id/secret
                 context.Validate();
                 return Task.CompletedTask;
             });

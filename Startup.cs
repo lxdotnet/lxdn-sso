@@ -69,21 +69,24 @@ namespace Lxdn.Sso
             services
                 .AddCors()
                 .AddHttpContextAccessor()
-                .AddSingleton(LogManager.GetLogger("sso"))                
-                .AddScoped(container => container.GetService<IHttpContextAccessor>().HttpContext)
-                .AddAuthentication(IISDefaults.AuthenticationScheme);
+                .AddSingleton(LogManager.GetLogger("sso"))
+                .AddScoped(container => container.GetService<IHttpContextAccessor>().HttpContext);
+                //.AddAuthentication(IISDefaults.AuthenticationScheme);
 
-            services.AddControllers();
+            //services.AddControllers();
 
             services
                 .AddAuthentication(auth => {
                     auth.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
                     //auth.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    auth.RequireAuthenticatedSignIn = false;
                 })
                 .AddCookie(JwtBearerDefaults.AuthenticationScheme, options =>
                 {
                     options.LoginPath = "/user/signin";
                     //options.LogoutPath = "/user/signout";
+                    options.Cookie.SameSite = SameSiteMode.None;
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
                 })
                 .AddOpenIdConnectServer(oauth => {
                     oauth.AllowInsecureHttp = true;
@@ -104,14 +107,15 @@ namespace Lxdn.Sso
             else
                 app.UseHsts();
             app
-            //.UseHttpsRedirection();
-            .UseRouting()
-            .UseAuthentication()
+            .UseHttpsRedirection()
+            //.UseRouting()            
             .UseCors(Cors.AllowEverything)
             .UseDefaultFiles()
             .UseStaticFiles()
-            .UseMiddleware<SpaRewriter>();
-            //.UseEndpoints(endpoints => endpoints.MapControllers()); // https://stackoverflow.com/questions/57684093/using-usemvc-to-configure-mvc-is-not-supported-while-using-endpoint-routing
+            .UseAuthentication()
+            //.UseMiddleware<SpaRewriter>()
+            .UseRouting()
+            .UseEndpoints(endpoints => endpoints.MapControllers()); // https://stackoverflow.com/questions/57684093/using-usemvc-to-configure-mvc-is-not-supported-while-using-endpoint-routing
         }
     }
 }
