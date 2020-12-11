@@ -1,21 +1,22 @@
 ﻿
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Lxdn.Sso.Models;
 
 namespace Lxdn.Sso.Controllers
 {
     /// <summary>
     /// Helps generate a Json Web Key (JWK) containing private and public keys needed for token protection
-    /// </summary>
-    [Route("jwk")]
+    /// </summary>    
     [ApiController]
+    [Authorize(AuthenticationSchemes = "bearer1"), Route("jwk")]
     public class JwkController : ControllerBase
     {
         [HttpPost]
         public JwkModel GenerateJwk([FromBody] JwkRequest request)
         {
-            var rsa = new RSACryptoServiceProvider(1024);
+            using var rsa = new RSACryptoServiceProvider(request.KeySize ?? 1024);
             var parameters = rsa.ExportParameters(true); // include private key
 
             var jwk = new JwkModel

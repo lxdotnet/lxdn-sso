@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -20,15 +20,23 @@
         </ul>
     </div>
     <button id="refresh" ng-click="oauth.refreshToken()" title="force refresh token">Refresh</button>
+    <button id="generateJwk" ng-click="generateJwk(keySize)" title="Generate new JSON Web Key">Generate JWK ({{keySize}})</button>
+    <div id="jwk" ng-show="jwk">{{jwk | json}}</div>
     <script>
         (function (angular) {
             angular
                 .module('app', ['auth']) // 'app' is currently hardcoded in boot.js
                 .run(['$document', function ($document) {
                     $document.find('body').addClass('app-started');
-                }]).controller('sso', ['$scope', 'user', function ($scope, user) {
+                }]).controller('sso', ['$scope', '$http', 'user', function ($scope, $http, user) {
                     $scope.oauth = oauth;
                     $scope.user = user.current();
+                    $scope.keySize = 1024;
+                    $scope.generateJwk = function (keySize) {
+                        return $http.post('/jwk', { keySize: keySize }).then(function (response) {
+                            $scope.jwk = response.data;
+                        });
+                    }
                 }])
         })(angular);
     </script>

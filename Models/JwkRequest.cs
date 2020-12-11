@@ -2,6 +2,6 @@
 {
     public class JwkRequest
     {
-        public int KeySize { get; set; }
+        public int? KeySize { get; set; }
     }
 }

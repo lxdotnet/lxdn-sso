@@ -104,3 +104,7 @@ a.logout::after {
 #refresh {
     align-self: flex-start;
 }
+#jwk {
+    white-space: pre;
+    align-self:  start;
+}

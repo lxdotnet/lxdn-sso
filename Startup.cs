@@ -1,10 +1,12 @@
-﻿using System;
+﻿
+using System;
+using System.Threading.Tasks;
+using System.Security.Cryptography;
 using System.IdentityModel.Tokens.Jwt;
 
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Server.IISIntegration;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -14,9 +16,6 @@ using Microsoft.IdentityModel.Tokens;
 
 using Lxdn.Sso.Extensions;
 using NLog;
-using Microsoft.AspNetCore.Http;
-using System.Threading.Tasks;
-using Microsoft.Extensions.FileProviders;
 
 namespace Lxdn.Sso
 {
@@ -60,7 +59,8 @@ namespace Lxdn.Sso
         {
             services.AddMvc();//.SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             var jwk = configuration.GetSection("AppSettings:jwk").Get<JsonWebKey>(); // https://mkjwk.org/ https://tools.ietf.org/html/rfc7517#section-4
-            var asymmetric = new SigningCredentials(jwk, jwk.Alg);
+            var signing = new SigningCredentials(jwk, jwk.Alg);
+            var verification = new RSAParameters { Modulus = Base64UrlEncoder.DecodeBytes(jwk.N), Exponent = Base64UrlEncoder.DecodeBytes(jwk.E) };
 
             IdentityModelEventSource.ShowPII = true; // include more information in the exceptions being returned (important for debugging)
             AsymmetricSignatureProvider.DefaultMinimumAsymmetricKeySizeInBitsForSigningMap[jwk.Alg] = 512;
@@ -81,10 +81,17 @@ namespace Lxdn.Sso
                     //auth.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                     auth.RequireAuthenticatedSignIn = false;
                 })
+                .AddJwtBearer("bearer1", jwt => { // for secured communication with REST controllers
+                    jwt.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateAudience = false,
+                        ValidateIssuer = false,
+                        IssuerSigningKey = new RsaSecurityKey(verification)
+                    };
+                })
                 .AddCookie(JwtBearerDefaults.AuthenticationScheme, options =>
                 {
                     options.LoginPath = "/user/signin";
-                    //options.LogoutPath = "/user/signout";
                     options.Cookie.SameSite = SameSiteMode.None;
                     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
                 })
@@ -94,7 +101,7 @@ namespace Lxdn.Sso
                     oauth.AuthorizationEndpointPath = "/oauth/authorize";
                     oauth.ProviderType = typeof(AuthorizationProvider);
                     oauth.AccessTokenHandler = new JwtSecurityTokenHandler();
-                    oauth.SigningCredentials.Add(asymmetric);
+                    oauth.SigningCredentials.Add(signing);
                     oauth.AccessTokenLifetime = TimeSpan.FromMinutes(15);
                     oauth.LogoutEndpointPath = "/user/signout";
                 });
@@ -108,13 +115,13 @@ namespace Lxdn.Sso
                 app.UseHsts();
             app
             .UseHttpsRedirection()
-            //.UseRouting()            
+            .UseAuthentication()
             .UseCors(Cors.AllowEverything)
             .UseDefaultFiles()
-            .UseStaticFiles()
-            .UseAuthentication()
+            .UseStaticFiles()            
             //.UseMiddleware<SpaRewriter>()
-            .UseRouting()
+            .UseRouting()            
+            .UseAuthorization() // for local REST communication (POST /jwk)
             .UseEndpoints(endpoints => endpoints.MapControllers()); // https://stackoverflow.com/questions/57684093/using-usemvc-to-configure-mvc-is-not-supported-while-using-endpoint-routing
         }
     }
